@@ -1,0 +1,7 @@
+# Nothing generated lives here — the scripts write into the caller's project.
+# These patterns only guard against stray local test output.
+*.bin
+*.raw
+.analysis/
+.grade/
+node_modules/
