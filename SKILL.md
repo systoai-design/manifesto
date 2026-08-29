@@ -470,3 +470,55 @@ not when the frame looks right. Concretely:
   obtained. Say so plainly in the handoff, with the reason, the measured
   before/after, and what would actually fix it — do not quietly average it away
   into the overall figure.
+
+---
+
+## Replacing the voiceover, keeping the bed
+
+When the reference's soundtrack sells a different product, split it: keep the
+music, replace the read. Six scripts in `scripts/` do this, and the principle is
+the same as everywhere else in this skill — **measure, don't eyeball.**
+
+**1. Separate.** `demucs htdemucs --two-stems=vocals`. Verify the removal
+rather than assuming it: compare the instrumental's 300-3400 Hz speech-band
+energy against the vocal stem's. A 14 dB gap is clean. Whisper returns "I'll
+see you next time" from almost any non-speech audio — that is its hallucination
+on silence, never evidence of residual dialogue.
+
+**2. Transcribe the original read as a clock.** `vo-transcribe.py` runs
+faster-whisper at word resolution over the *isolated vocal stem* and prints a
+frame number for every word. This is a second clock, independent of the picture,
+and it is the timing template: write the new lines to the original's syllable
+budgets and split them at the frames where the original speaker took breath.
+Card starts tell you where a line may begin; the original read tells you how
+long it has.
+
+**3. Cast by measurement.** `vo-profile.py` gives the original read's median f0,
+pitch spread and words-per-minute. `vo-rank-voices.py` profiles every candidate
+voice by autocorrelation f0 on its preview clip and ranks by distance from that
+target. Register is measurable; pick from the shortlist by ear, not the whole
+catalogue. Weigh the engine's own quality grade against f0 distance — 17 Hz is
+about 1.5 semitones, an ordinary difference between two real VO artists, and
+worth trading for a materially better voice.
+
+**4. Never splice engines.** If a hosted service runs out mid-batch, regenerate
+every line locally rather than shipping a read half from each — the timbre
+change mid-film is far more noticeable than either voice alone. Kokoro
+(`kokoro-v1.0.onnx`, CPU, no GPU needed) is a good local fallback; re-run the
+same f0 ranking over its voices so the choice stays measured.
+
+**5. Fit by search, not by stretching.** `vo-generate.py` renders each line at
+nine speeds and keeps the take closest to its window *without exceeding it*.
+Time-stretching a finished take to fit is audible; choosing the take that
+already fits is not.
+
+**6. Place by sample, verify by energy.** `vo-mix.py` writes each clip at
+`round(start_frame / fps * sr)` with 8 ms edge ramps. `vo-verify.py` then finds
+each line's actual energy onset in the assembled track and reports the drift.
+Verify with energy onsets, not ASR segment starts — Whisper's boundaries lag
+soft attacks by a third of a second and will make a sample-accurate mix look
+broken.
+
+**Licensing is not a technical question.** Separating a bed does not license it.
+Say so plainly in the findings: a kept bed is fine for an animatic or a pitch
+and is not clearable for a paid run.
