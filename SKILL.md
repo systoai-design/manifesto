@@ -545,5 +545,37 @@ bands only** - leave presence out of the objective, or the fit will happily dull
 a read that needs to stay bright.
 
 **Licensing is not a technical question.** Separating a bed does not license it.
-Say so plainly in the findings: a kept bed is fine for an animatic or a pitch
-and is not clearable for a paid run.
+A kept bed is fine for an animatic or a pitch and is not clearable for a paid
+run. When it has to clear, compose one - and note that AI music generators
+mostly do not solve this, because their weights carry their own terms
+(MusicGen's are CC-BY-NC, which fails for the same reason the borrowed bed did).
+
+## Composing a replacement bed
+
+`bed-compose.py` is a worked example: sub, detuned-saw pad, plucked pulse,
+kick, ticks, shaker, impacts, risers and a bell figure, through a
+synthetic-IR reverb, all from oscillators and noise. Three things make it fit a
+film rather than just play under one.
+
+**Fit the tempo to the picture, not to the reference's music.**
+`bed-tempo-fit.py` least-squares fits a BPM and phase against your own cut
+list, weighting structural cuts higher. On the piece this was built for it
+landed on 150 BPM - a clean 12 frames per beat at 30fps - with the big cuts
+within 0.1-2.5 frames of a beat. The edit is yours, so a grid derived from it
+is yours too.
+
+**Write the arrangement as an explicit dB arc through the film's sections**,
+not as instrument on/off gates. The first attempt here gated instruments and
+measured dead flat at -11 dB for the entire film; replacing that with a
+breakpoint arc (silent open, verse, build into the peak, step back for the
+logo) is what made it feel composed.
+
+**Leave a hole for the voice.** Lowpass the pad below 1 kHz, keep percussive
+air above 6 kHz, and check the result: measure the bed's spectrum relative to
+its own 500-800 Hz band and confirm 1.5-4 kHz is well down.
+
+Verify the result by pointing `bed-analyse.py` - the same script you used on
+the reference bed - at your composition. It should detect the tempo you
+composed and pitch classes matching the harmony you wrote. If the detected
+pitch classes match the *reference's*, you have transposed rather than
+composed.
