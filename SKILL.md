@@ -3,13 +3,17 @@ name: motion-replicate
 description: >
   Replicate a motion-graphics video (ad, kinetic typography, logo sting, title
   sequence, UI animation) from a video file or URL into a rendered HyperFrames
-  composition that matches it frame-for-frame. Use whenever the user shares a
-  video and asks to replicate, recreate, clone, copy, or "make this exact
-  animation" — including Alight Motion / After Effects showcase videos, ad
-  recreations, or any motion reference where the deliverable is a matching
-  video (not a website — that's swipefile). Measures the reference numerically
-  (per-frame pixel analysis, fitted easing curves, audio-onset cut detection)
-  rather than eyeballing sampled frames, and scores convergence with SSIM.
+  composition that matches it frame-for-frame — or build a NEW film on that
+  measured skeleton, swapping in different copy, brand and voice while keeping
+  its cuts and easing. Use whenever the user shares a video and asks to
+  replicate, recreate, clone, copy, "make this exact animation", or "do this but
+  for us" — including Alight Motion / After Effects showcase videos and ad
+  recreations, and for the work that follows: replacing a voiceover, composing
+  an original music bed to clear the borrowed one, raising the frame rate,
+  adding motion blur to cards that strobe, and reframing to 9:16 or 1080p. Not
+  for websites — that's swipefile. Measures the reference numerically (per-frame
+  pixel analysis, fitted easing curves, audio-onset cut detection) rather than
+  eyeballing sampled frames, and scores convergence with SSIM.
 ---
 
 # Motion Replicate — video reference → matching rendered video
@@ -30,16 +34,23 @@ scored **98.26% of ceiling**; measured and graded to convergence it reached
 sampling never would: a **whole missing card** (a phrase that appears twice),
 three cards in the wrong order, a render-order bug blanking 13 frames, **eleven
 clips starting a frame late**, clip ends rendering one frame long, and a paper
-colour that was off-white where the reference is pure white. Working project
-with every technique: `D:\New Claude\motion-replicate\abe-ad` (read its
-`index.html`, `FINDINGS.md`, and `STORYBOARD.md`).
+colour that was off-white where the reference is pure white. Two worked projects, each with a `FINDINGS.md` carrying the full measurement
+trail - every correction, its evidence, and every change that scored worse and
+was reverted:
+
+- `D:\New Claude\motion-replicate\abe-ad` - the replication itself
+- `D:\New Claude\motion-replicate\systo-26s` - a **different film built on that
+  measured skeleton**: same 776 frames and cut list, new copy, brand, voice and
+  original music bed, delivered at 60fps in 16:9, 1080p and 9:16. Its `build.sh`
+  is the whole render pipeline including the per-card shutter.
 
 ## 0. Ground rules
 
 - **Clone what you can't copy.** Unavailable font → nearest metric match
   (Helvetica → Arial on Windows; verify with §3.5, don't assume). Trademarked
-  glyph → hand-drawn SVG. Soundtrack → extract the reference's own audio and
-  mux it, and say plainly that this makes the result private/study-only.
+  glyph → hand-drawn SVG. Soundtrack → mux the reference's own while building,
+  and say plainly that this makes the result private/study-only. If it has to
+  clear, replace the read and compose a bed — see the audio sections at the end.
 - Work dirs: `D:\New Claude\motion-replicate\<slug>\` for the project,
   `<project>\.analysis\` for measurement artifacts. Never C:.
 - Scripts live in this skill's `scripts/`. Refer to it as `$S` below.
@@ -434,8 +445,12 @@ just `delta`, and check the frames either side of every cut.
 
 Verify the **render**, not the preview: extract frames from the MP4, hstack
 against reference frames at the same timestamps, read them, and report the SSIM
-plus any residual deltas honestly. State that the muxed reference audio makes
-the artefact private/study-only.
+plus any residual deltas honestly.
+
+Sweep the whole film before handing anything over, not one frame — see
+*Verifying a build before handing it over*. Say plainly what is and is not
+cleared: a muxed reference soundtrack makes the artefact private/study-only, and
+separating a bed does not license it.
 
 ## Scripts
 
@@ -452,6 +467,19 @@ the artefact private/study-only.
 | `reconstruct.mjs` | merge detections across a moving shot into authored coordinates |
 | `match-tiles.mjs` | template-match every instance of a repeated element |
 | `fit-tiles.mjs` | **optimise** a scattered layer's positions against the reference |
+| `reframe.mjs` | generate an aspect-ratio variant with the stage wrapper done right |
+| `check-framing.mjs` | sweep a render for centring, clipping and the widest content |
+| `vo-transcribe.py` | word-level frame numbers for the reference read - the timing template |
+| `vo-profile.py` | the reference read's median f0, pitch spread and words per minute |
+| `vo-rank-voices.py` | rank candidate voices by f0 distance from that target |
+| `vo-generate.py` | render each line at nine speeds, keep the take that fits its window |
+| `vo-mix-ratio.py` | does the original duck? and how far above its bed does the voice sit? |
+| `vo-fit-eq.py` | grid-fit the EQ that clears the read, scored on the mud bands only |
+| `vo-mix.py` | place each line to the sample, one constant gain on the bed |
+| `vo-verify.py` | energy onsets vs plan - never verify placement with ASR |
+| `bed-tempo-fit.py` | least-squares fit a tempo grid to your own cut list |
+| `bed-compose.py` | synthesise an original bed - worked example |
+| `bed-analyse.py` | tempo, pitch classes and energy arc of any bed |
 
 ## Stop condition
 
@@ -579,3 +607,207 @@ the reference bed - at your composition. It should detect the tempo you
 composed and pitch classes matching the harmony you wrote. If the detected
 pitch classes match the *reference's*, you have transposed rather than
 composed.
+
+---
+
+# Deriving a NEW film from a measured reference
+
+A measured reference is not only something to clone. Once you have its cut
+frames, easing curves and mechanics, you can hang different copy, palette and
+typography on that skeleton and get a film of your own that moves like one that
+already works. Same length, same cuts, different argument.
+
+**What transfers:** cut frames, durations, easing curves, mechanics, the blank
+gaps, the audio's word-level cadence. **What does not:** copy, colour, type,
+harmony, and any layout number fitted to the old words.
+
+**Do not grade it.** Pixel similarity is meaningless once the words differ.
+Verify that the *structure* survived instead:
+
+- the frame count and duration match exactly
+- `segment.mjs` finds the cuts on the same frames
+- the blank-gap runs line up
+
+On the build this came from, 9 of the reference's 11 blank runs landed
+identically; the other two differed by a single frame where a mask reveal
+crosses the ink threshold, because the substituted face covers less area per
+glyph. That is the expected residue, not a fault.
+
+**Per-card sizes must be re-fitted.** Every font size, offset and tile position
+in the original was fitted to the original's words in the original's typeface.
+Carry them over unchanged and things will be the wrong size, usually too wide.
+Re-measure per card.
+
+**Watch for stale selectors.** A tween copied from the source build that targets
+a card the new film does not have fails silently. Grep every selector in the
+timeline against the markup before rendering.
+
+## Deviating from the reference on purpose
+
+Sometimes a card reads badly and the reference is doing exactly the same thing.
+**Check the reference before changing anything.** On the build this came from, a
+morph card showed garbled text for eight frames; the reference showed the same
+garble on the same frames. The replication was faithful and the *mechanic* was
+the problem, made worse here because a heavier typeface turns a thin garble into
+a dense blob.
+
+That reframes the decision. It is no longer a bug fix, it is a design change,
+and it should be:
+
+- **made deliberately**, because the client's film matters more than fidelity to
+  a reference nobody else will see
+- **recorded as a deviation**, with the reference's own behaviour noted, so the
+  next person does not "fix" it back
+
+The user's eye is the ground truth for whether something reads badly. Your
+measurements are the ground truth for *why*, and for whether the fix worked.
+
+---
+
+# Frame rate, and when to reach for a shutter
+
+## Raising the frame rate needs no retiming
+
+If the timeline is authored in seconds (`var F = 1/30`, every cue written as
+`f(frameNumber)`) then the frame rate only controls how often that timeline is
+sampled. Render at 60 and you get twice the frames, the same duration, every cut
+on the same second. `hyperframes render -f 60` needs no edit at all.
+
+Keep the authoring grid at the reference's frame rate. It is the grid everything
+was measured on; changing it invalidates every number in the build.
+
+## "Choppy" is usually not a frame-rate problem
+
+Measure before assuming. For the suspect card, decode its frames and report:
+
+- **how many are identical to their predecessor** - duplicates mean the motion
+  really is updating at a lower rate
+- **the per-frame change** - how much actually moves between frames
+- **the per-frame step of the moving element's bbox** - a smooth ease shows a
+  smooth progression of steps
+
+On the card that prompted this section every frame was distinct, and the hero's
+width stepped -2, -6, -10, -14, -18, -23, -26, -30, -31, -27, -22, -19, -14,
+-10, -6 px: a clean ease with no snapping. The motion was perfect. The problem
+was that **31 px of edge travel per frame strobes** on a high-contrast
+letterform, because the eye cannot fuse consecutive frames. More frames do not
+fix that. A shutter does.
+
+Above roughly 5-10 px of edge travel per frame, expect strobing on hard edges.
+
+## The shutter, and the rule that governs it
+
+Render at 240fps and average back down. `tmix=frames=4:weights=1 1 1 1,fps=60`
+is a 360 degree shutter at 60fps. Verify it landed by profiling one moving edge:
+a single step (57 -> 228) should become a ramp (57, 93, 128, 143, 176, 188, 223).
+
+**Never let the shutter window straddle a cut.** Averaging across a cut blends
+two cards into a ghost frame, and on a film built from hard cuts that is far
+worse than the strobing you set out to fix. It is measurable as a jump in the
+first frame's change after the cut: 1.6 units at a 180 degree shutter, 24.6 at
+270 on the same material.
+
+So blur is applied **per card, held a frame clear of every cut**, and
+composited over the sharp render:
+
+    ffmpeg -i sharp.mp4 -i blurred.mp4 -filter_complex \
+      "[0:v][1:v]overlay=enable='between(n,218,230)+between(n,268,304)'[v]" \
+      -map "[v]" -map 0:a ...
+
+Do not reach for a global shutter. Most of a kinetic-type film is static holds
+and hard cuts, where blur does nothing (averaging identical frames returns the
+same frame) except put the cuts at risk.
+
+**Do not trust a global sharpness metric to tell you whether blur applied.** Mean
+gradient energy over a whole frame is dominated by static content and barely
+moves. Profile one moving edge instead.
+
+---
+
+# Reframing to another aspect ratio
+
+## The trap
+
+`hyperframes` sizes the composition **root** to `data-width` / `data-height`. So
+putting a transform on the root scales a box that is *already the output size*,
+from its top-left corner, throwing the content into a corner rather than
+reframing it. At 1920x1080 the centre landed at (1440, 810); at 1080x1920 it sat
+783 px low.
+
+The measured stage must live in a **wrapper inside** the root, and the wrapper is
+what gets transformed. `reframe.mjs` does this:
+
+    node reframe.mjs index.html vertical.html --w 1080 --h 1920 --scale 1.3
+    node reframe.mjs index.html wide1080.html --w 1920 --h 1080 --scale 1.5
+
+## Choosing the scale
+
+Run `check-framing.mjs` on the **native** render, the one at the authored stage
+size, so the widest figure comes back in stage pixels:
+
+    node check-framing.mjs renders/native.mp4 --w 1280 --h 720 \
+      --fullbleed 216-231,854-865
+
+The largest safe scale is `(targetWidth - 2*margin) / widestContent`. On this
+build the widest line measured 683 px, which allowed **1.3x into a 1080-wide
+frame**, so the vertical type came out *larger* than the 16:9, which is what
+mobile wants. Reframing is not necessarily shrinking.
+
+Pass `--fullbleed` for frames meant to fill or overflow: a slam zoom, a wipe
+covering frame, a full-bleed texture card. Otherwise they dominate the widest
+figure and force the scale down for no reason.
+
+## Rendering larger, and proving it is not an upscale
+
+Scaling the stage rather than the canvas means the browser re-rasterises type at
+the new scale, which is a genuine re-render. Prove it: on a static card, measure
+the 20-80% rise across glyph edges in the native render against a lanczos
+upscale of the smaller one. 1.88 px against 2.75 px is a 1.47x gain, tracking a
+1.5x scale. If the two match, something is rasterising at the wrong scale;
+suspect `will-change: transform` on an ancestor.
+
+## What a narrower crop breaks that a wider one does not
+
+- **Anything that enters from an offset.** A lockup sliding in from x+285 clears
+  a 1280-wide stage and runs off a narrower crop. It took two passes here
+  because the first correction was estimated: 285 -> 195 still left the
+  wordmark's period **9 px** from the frame edge. Measure the settled element,
+  account for its entry scale, then solve for the offset.
+- **Solid backgrounds sized to the stage.** A paper card inset to a 1280x720
+  stage fills only a band of a 9:16 frame and reads as letterboxing. Extend it
+  past the stage (`top: -400px; bottom: -400px`) so it fills. If `check-framing`
+  reports many edge-touching frames on solid cards, this is why.
+- **Full-bleed texture cards.** A hero word sized for 16:9 can be wider than the
+  narrower frame. Resize it and its texture together, and add rows or columns so
+  the field still bleeds off the new edges.
+
+---
+
+# Verifying a build before handing it over
+
+**One frame is not a check.** This skill's worst moment was shipping a reframed
+build whose content sat in the bottom-right corner, after finding and fixing
+that exact bug in the *other* variant minutes earlier and verifying the fix on a
+single frame of the one that was already correct.
+
+Before handing over any build, sweep the whole film:
+
+    node check-framing.mjs renders/out.mp4 --w W --h H --fullbleed ...
+
+and read three numbers: mean offset from centre, worst offset, and frames
+touching a side edge. A large worst-offset is usually a line mid-reveal and is
+fine. Frames touching an edge that are not deliberately full-bleed are faults.
+
+When you fix a class of bug, **check every artefact that could have it**, not
+just the one you were looking at.
+
+## A measurement bug that will cost you an hour
+
+Decoding one frame gives `(H, W, 3)`, so `.mean(2)` averages the colour
+channels. Decoding a *range* gives `(n, H, W, 3)`, where `.mean(2)` averages over
+**width** and returns nonsense: here it reported a 469 px lockup as 3 px wide and
+sent a correction off in the wrong direction. Use `.mean(3)`, or index the frame
+first.
+
+Any measurement that returns an absurd value is wrong until proven otherwise.
+Sanity-check it against something already known before acting on it.
