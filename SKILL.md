@@ -464,6 +464,9 @@ not when the frame looks right. Concretely:
   of that card's error belongs to which element (§6b) before touching it again.
 - Some cards have a practical ceiling below the target. A dense irregular
   background reconstructed rather than traced is the usual one: on the proven
-  build the word-wall card finished at 86% while every other card reached
-  96-100%. Say so plainly in the handoff, with the reason and the measured
-  before/after — do not quietly average it away into the overall figure.
+  build the word-wall card finished at **89.5% while the other 22 of 23 reached
+  99-100%**, and its residual split 35.7% glyph outline / 60.0% layer
+  arrangement — both traced to a typeface that could not be identified or
+  obtained. Say so plainly in the handoff, with the reason, the measured
+  before/after, and what would actually fix it — do not quietly average it away
+  into the overall figure.
