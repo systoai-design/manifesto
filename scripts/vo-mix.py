@@ -1,27 +1,34 @@
-import numpy as np, soundfile as sf, json, subprocess
-FPS, DUR = 30.0, 776/30.0
-bed, sr = sf.read(".analysis/stems/htdemucs/ref-audio/no_vocals.wav")
-if bed.ndim == 1: bed = np.stack([bed, bed], 1)
-N = int(round(DUR*sr))
-bed = bed[:N] if len(bed) >= N else np.pad(bed, ((0, N-len(bed)), (0,0)))
-vo = np.zeros((N, 2), dtype=np.float64)
+import numpy as np, soundfile as sf, json
+FPS, N_F = 30.0, 776
+TARGET_DB = json.load(open(".analysis/mixratio.json"))["voice_over_bed_db"]
+vo, sr = sf.read(".analysis/vo-eq.wav")
+bed, sr2 = sf.read(".analysis/stems/htdemucs/ref-audio/no_vocals.wav")
+assert sr == sr2
+if vo.ndim == 1: vo = np.stack([vo,vo],1)
+if bed.ndim == 1: bed = np.stack([bed,bed],1)
+N = int(round(N_F/FPS*sr))
+def fit(x):
+    return x[:N] if len(x) >= N else np.pad(x, ((0,N-len(x)),(0,0)))
+vo, bed = fit(vo), fit(bed)
+# speech mask from the placed clips, so the ratio is measured where it matters
 plan = json.load(open(".analysis/vo-plan.json"))
+m = np.zeros(N, bool)
 for p in plan:
-    x, xsr = sf.read(f".analysis/vo/{p['tag']}.wav")
-    assert xsr == sr, (xsr, sr)
-    if x.ndim == 1: x = np.stack([x, x], 1)
-    a = int(round(p["start_frame"]/FPS*sr))
-    b = min(N, a+len(x))
-    # 8ms ramps so a placed clip never clicks at its edges
-    r = int(0.008*sr); seg = x[:b-a].copy()
-    if len(seg) > 2*r:
-        seg[:r] *= np.linspace(0,1,r)[:,None]; seg[-r:] *= np.linspace(1,0,r)[:,None]
-    vo[a:b] += seg
-def lufs_gain(x, target):
-    rms = np.sqrt((x**2).mean()); return target/max(rms,1e-9)
-vo *= lufs_gain(vo[np.abs(vo).max(1) > 0.01], 0.13)     # voice forward
-bed *= lufs_gain(bed, 0.055)                             # bed under it
-sf.write(".analysis/vo-track.wav", np.clip(vo,-1,1), sr)
-sf.write(".analysis/bed-track.wav", np.clip(bed,-1,1), sr)
-print(f"VO track  {len(plan)} lines placed, {vo.shape[0]/sr:.3f}s")
-print(f"bed       {bed.shape[0]/sr:.3f}s")
+    a = int(round(p["start_frame"]/FPS*sr)); m[a:min(N,a+int(p["dur"]*sr))] = True
+def rms(x): return float(np.sqrt((x**2).mean())) + 1e-12
+# bed to a fixed level - constant for the whole film, no ducking anywhere
+bed *= 0.075/rms(bed)
+# voice to the reference's measured ratio above the bed, during speech
+want = rms(bed[m]) * (10**(TARGET_DB/20))
+vo *= want/rms(vo[m])
+mix = bed + vo
+pk = np.abs(mix).max()
+if pk > 0.97: mix *= 0.97/pk
+sf.write(".analysis/mixed2.wav", mix, sr)
+# verify what we actually built
+bs, bq = rms(bed[m]), rms(bed[~m])
+print(f"bed during speech   {20*np.log10(bs):7.2f} dBFS")
+print(f"bed during silence  {20*np.log10(bq):7.2f} dBFS")
+print(f"bed variation       {20*np.log10(bs/bq):+7.2f} dB   (reference: +1.40, ours is one constant gain)")
+print(f"voice above bed     {20*np.log10(rms(vo[m])/bs):+7.2f} dB   (reference: {TARGET_DB:+.2f})")
+print(f"peak                {20*np.log10(pk):7.2f} dBFS")

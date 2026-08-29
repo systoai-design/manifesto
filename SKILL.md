@@ -519,6 +519,31 @@ Verify with energy onsets, not ASR segment starts — Whisper's boundaries lag
 soft attacks by a third of a second and will make a sample-accurate mix look
 broken.
 
+**Do not duck the bed until you have checked whether the original does.**
+Sidechaining the music under the voice is the reflex, and it pumps. The
+reference settles it: `vo-mix-ratio.py` measures the isolated bed's level during
+speech against its level during silence, and measures how far the original voice
+sits above its own bed. On the piece this skill was built from, the bed moved
++1.40 dB - *upward* - and the voice sat +2.28 dB above it. So: one constant gain
+on the bed, voice set to the measured ratio, no dynamics on the bed at all.
+
+Testing for pumping afterwards is harder than it looks, because music has swells
+of its own - on that same piece the isolated bed rose 8.4 dB after one line and
+fell 10.7 dB after another, which any naive detector flags. The test that
+actually separates them is the direction of the whole effect: in an un-ducked
+mix, windows under voice are *louder* than windows without, because the voice
+adds on top. In a ducked mix the quiet windows are louder, because the bed
+springs back.
+
+**"Muffled" usually means mud, not missing highs.** Diagnose it by comparing
+long-term average spectra against the original read, normalised to a mid band so
+you are comparing tilt and not level. The synthetic read that prompted this note
+was already 10-12 dB *brighter* than the reference above 4.5 kHz; the muffle was
++6 dB of excess at 150-300 Hz masking the consonants. `vo-fit-eq.py` grid-fits
+the correction, scoring squared error against the reference's tilt **in the mud
+bands only** - leave presence out of the objective, or the fit will happily dull
+a read that needs to stay bright.
+
 **Licensing is not a technical question.** Separating a bed does not license it.
 Say so plainly in the findings: a kept bed is fine for an animatic or a pitch
 and is not clearable for a paid run.
