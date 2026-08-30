@@ -10,7 +10,9 @@ description: >
   for us" — including Alight Motion / After Effects showcase videos and ad
   recreations, and for the work that follows: replacing a voiceover, composing
   an original music bed to clear the borrowed one, raising the frame rate,
-  adding motion blur to cards that strobe, and reframing to 9:16 or 1080p. Not
+  adding motion blur to cards that strobe, and reframing to 9:16 or 1080p. Also
+  carries the Apple-style per-character cascade (SF Pro, rise + fade + blur) and
+  how to translate an After Effects Range Selector into GSAP. Not
   for websites — that's swipefile. Measures the reference numerically (per-frame
   pixel analysis, fitted easing curves, audio-onset cut detection) rather than
   eyeballing sampled frames, and scores convergence with SSIM.
@@ -811,3 +813,133 @@ first.
 
 Any measurement that returns an absurd value is wrong until proven otherwise.
 Sanity-check it against something already known before acting on it.
+
+---
+
+# The Apple-style cascade
+
+The look that made this style spread: text that arrives per character or per
+word, each unit rising, fading up and un-blurring, with the units overlapping so
+heavily that it reads as one smooth wash rather than a stagger.
+
+In After Effects it is a **Text Animator driven by a Range Selector offset**.
+There is no equivalent primitive in CSS or GSAP, so it has to be translated -
+and the translation is the useful part, because getting it wrong produces a
+choppy stagger instead of a wash.
+
+## The After Effects recipe it comes from
+
+Consolidated from three tutorials, which agree on everything except one sign:
+
+    Text layer, centred, 3-4 words maximum
+    Font: SF Pro / SF Pro Display, semibold for display, tracking around -30
+    Animate -> Position, Y = 100        (or -100 from above, X +/-100 from the side)
+    Add -> Opacity = 0
+    Add -> Property -> Blur = 10        (40 is far too much; 10 reads as depth)
+    Range Selector -> Advanced
+        Based On:  Words  or  Characters
+        Shape:     Ramp Up
+        Ease High: -50                  (one source says +50 - fit it, see below)
+        Ease Low:  100
+    Offset: keyframe -100 at the start, +100 at the end
+    Ease the offset keyframes, and enable layer motion blur
+
+**Words vs characters** is the biggest look decision. Words is calmer and suits
+a spoken line; characters is more granular and mechanical.
+
+**Duration comes from the read, not from a number.** Say the line out loud and
+let that set the keyframe distance - roughly 2s for three words. Too tight and
+it outruns both the voiceover and the eye.
+
+## Translating the Range Selector to GSAP
+
+A Range Selector is a window that sweeps across the text. For a unit at
+normalised position `p` (index / count, 0 at the first unit, 1 at the last),
+with the range spanning a fraction `R` of the text and offset `o`:
+
+    selector s = clamp((p - start - o) / R, 0, 1)
+
+The animator's values apply at `s = 1` and vanish at `s = 0`, so a unit is
+fully hidden at `s = 1` and settled at `s = 0`. As `o` sweeps, each unit
+transitions over an interval of width `R` in offset-space, and the sweep must
+travel `1 + R` for every unit to finish.
+
+That gives the mapping. For a total animation of duration `T` over `n` units:
+
+    per-unit duration   = T * R / (1 + R)
+    stagger, first-to-last = T * 1 / (1 + R)
+    stagger between units  = T / ((1 + R) * (n - 1))
+
+**The ratio of stagger-spread to per-unit duration is 1 : R.** That single
+number is what separates this from an ordinary stagger: `R` near 1 means every
+unit is in motion almost the whole time, which is the wash. A small `R` gives
+discrete pops.
+
+Measured off a real instance of the effect (an 11-character line at 60fps): the
+sweep took ~20 frames while each unit took ~14, so `R` was about **0.7**, total
+~0.57s. Start there and fit to your reference.
+
+In GSAP:
+
+    gsap.fromTo(units,
+      { yPercent: 100, autoAlpha: 0, filter: "blur(10px)" },
+      { yPercent: 0, autoAlpha: 1, filter: "blur(0px)",
+        duration: T * R / (1 + R),
+        stagger:  T / ((1 + R) * (units.length - 1)),
+        ease: "power3.out" })
+
+`Ease Low: 100` is why the arrival is so soft: it fully eases the approach to
+`s = 0`, the settled state. That is a strong ease-out, so `power3.out` or
+`expo.out`, not `power1`. Fit the actual curve from the reference with
+`segment.mjs` rather than taking any of this on faith - the ease is the whole
+character of the move.
+
+## Do not confuse it with a mask reveal
+
+This skill already teaches a masked word-rise (`overflow: hidden` on a wrapper,
+`yPercent` on an inner span). The two look similar in thumbnails and are
+completely different mechanics:
+
+| | mask reveal | Apple cascade |
+| --- | --- | --- |
+| edge | hard clip on a straight line | none; the glyph is whole throughout |
+| opacity | usually none | fades from 0 |
+| blur | none | present, and it is the tell |
+| units | usually per word | per character or per word |
+| overlap | discrete stagger | heavy - the point of the effect |
+
+Section 3.3 already says to read the edges. Here the specific test is: **does a
+glyph ever appear cut by a straight line?** If yes it is masked. If it is whole
+but soft and translucent as it moves, it is the cascade. `track.mjs` on a single
+glyph settles it - a masked glyph's top edge is pinned to the mask while its
+body moves; a cascading glyph's edges move together.
+
+## The rest of the style
+
+The cascade is the signature, but on its own it does not read as Apple. From
+the same sources:
+
+- **Palette.** White, black, or a very light grey ground. No loud or
+  complementary colour. Accent sparingly.
+- **Type.** SF Pro Display; bold for headings, regular or medium for
+  subheadings. Tight tracking.
+- **Space.** Generous. Nothing cramped, nothing accidental. The layout stays
+  centred - off-balance layouts cost attention.
+- **Restraint.** Subtle, smooth, quick. Nothing flashy or dramatic.
+
+Polish that carries most of the "premium" feeling:
+
+- **A very subtle vertical gradient on the text**, lighter at the top. It pairs
+  with text rising from below, because the glyph darkens as it enters. Keep it
+  almost imperceptible - if you can see it as a gradient, it is too strong.
+- **Motion blur on**, always. It is the difference between clean and cheap.
+- **Vary the entry direction** between lines (up, down, left, right) and swap
+  text and background colours between sentences, with a shape layer wiping the
+  change. Repeating one identical move for a whole film is what makes long text
+  sequences boring.
+- **Sound.** Smooth motion wants smooth sound. A cascade with a soft transient
+  per line reads far more finished than a silent one.
+- **Glass panels**, if the design needs surfaces: a blurred shape used as an
+  adjustment layer, plus a duplicate with no fill and a white stroke at low
+  opacity for the edge. It only works over something - on a flat ground a blur
+  has nothing to blur.
