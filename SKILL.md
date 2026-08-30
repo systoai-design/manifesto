@@ -12,7 +12,8 @@ description: >
   an original music bed to clear the borrowed one, raising the frame rate,
   adding motion blur to cards that strobe, and reframing to 9:16 or 1080p. Also
   carries the Apple-style per-character cascade (SF Pro, rise + fade + blur) and
-  how to translate an After Effects Range Selector into GSAP. Not
+  how to translate an After Effects Range Selector into GSAP, and Apple's
+  liquid-glass surface in CSS. Not
   for websites — that's swipefile. Measures the reference numerically (per-frame
   pixel analysis, fitted easing curves, audio-onset cut detection) rather than
   eyeballing sampled frames, and scores convergence with SSIM.
@@ -943,3 +944,94 @@ Polish that carries most of the "premium" feeling:
   adjustment layer, plus a duplicate with no fill and a white stroke at low
   opacity for the edge. It only works over something - on a flat ground a blur
   has nothing to blur.
+
+---
+
+# Liquid glass
+
+Apple's post-WWDC-2025 surface: a panel that blurs and bends what is behind it,
+with a bright hairline on its lit edges, a soft cast shadow, and a glint that
+travels around its rim.
+
+## What After Effects does, and what it maps to
+
+The AE recipe is an adjustment layer carrying **CC Glass**, track-matted to a
+rounded shape, with the shape as its bump map (softness 25, height 60,
+displacement 100), lit by an **ambient AE light** at 200% - and CC Glass only
+responds to AE lights if the shape layer is **3D**. Around it: a duplicate with
+no fill and a 2px stroke at **overlay, 50%** for the rim; another duplicate
+filled black, blurred ~40, offset down, at ~35% opacity, inverse-matted for the
+shadow; and **CC Light Sweep** (shape smooth, width 100, sweep intensity 0, edge
+intensity 60, edge thickness 3, light reception cutout) with its Direction
+animated one full turn for the glint.
+
+Every part of that has a CSS equivalent except one, and the exception matters.
+
+## The CSS build (verified rendering)
+
+    .glass {
+      border-radius: 44px; overflow: hidden;
+      /* blur behind, and lift its colour the way real glass does */
+      backdrop-filter: blur(14px) saturate(1.55) brightness(1.06);
+      /* a faint body tint, so it reads as a surface and not a hole */
+      background: linear-gradient(150deg,
+        rgba(255,255,255,0.16), rgba(255,255,255,0.05) 46%, rgba(255,255,255,0.11));
+      /* the rim: bright hairline on the lit edge, softer elsewhere, plus cast */
+      box-shadow:
+        inset 0  1.5px 0 rgba(255,255,255,0.62),
+        inset 0 -1.2px 0 rgba(255,255,255,0.20),
+        inset  1.2px 0 0 rgba(255,255,255,0.20),
+        inset -1.2px 0 0 rgba(255,255,255,0.20),
+        0 26px 50px rgba(0,0,0,0.42);
+    }
+
+The travelling glint is a rotating conic gradient in an inset child at
+`mix-blend-mode: overlay`, spun 0 -> 360 with a linear ease. That is CC Light
+Sweep's Direction keyframe, exactly.
+
+**The body tint is not optional.** Without it the panel reads as a hole cut in
+the frame rather than a pane sitting on it, and no amount of edge work fixes
+that.
+
+**The rim is four separate inset shadows, not a border.** Real glass catches
+light hardest on one edge. A uniform `border` reads as a sticker; a bright top
+inset with dimmer sides is what sells it.
+
+## Refraction: the part that does not map
+
+`backdrop-filter` blurs but does not *bend*. The obvious CSS analogue of CC
+Glass is an SVG `feDisplacementMap` fed by the panel's own blurred alpha:
+
+    <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="bump"/>
+    <feDisplacementMap in="SourceGraphic" in2="bump" scale="26"
+                       xChannelSelector="A" yChannelSelector="A"/>
+
+**This does not work, and it is worth knowing why before you spend an hour on
+it.** `feDisplacementMap` displaces by a channel's *value*, not by its gradient.
+Feeding the same channel to both X and Y pushes every pixel the same diagonal
+distance in proportion to alpha, so the panel slides bodily and grows a ghosted
+double edge instead of bending light at its rim. Rendered side by side against a
+plain panel, the plain one looks more like glass.
+
+True refraction needs a **normal map**: an image where R encodes horizontal
+displacement and G vertical, ramping steeply only near the edges, fed as
+`xChannelSelector="R" yChannelSelector="G"`. Build that deliberately - as an
+inline SVG gradient pair referenced through `feImage` - or skip refraction
+entirely. On a busy background the blur, tint, rim and glint carry the look on
+their own.
+
+## Structure, from the same source
+
+Two habits from the AE build that translate directly and are worth stealing:
+
+- **Controllers, not per-element keyframes.** Group each cluster under a null
+  (buttons, panel, whole device) and parent the nulls into a chain, so one
+  scale keyframe on the outermost drives the entry for everything. In HTML that
+  is nested wrapper divs, each animated as a unit - the same reason the
+  reframing work in this skill needed a stage wrapper.
+- **Offset sibling groups by ~3 frames.** Not per element, per *group*. It is
+  what stops a UI assembling like a spreadsheet.
+- **Property links.** In AE the stroke and shadow duplicates are pick-whipped to
+  the main shape so size and roundness propagate. In CSS use one custom property
+  (`--r` for radius, `--w` for width) read by all three layers, so a single
+  change moves the panel, its rim and its shadow together.

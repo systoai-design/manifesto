@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>glass test</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<style>
+  html, body { margin: 0; background: #101014; }
+  #g { position: relative; width: 1280px; height: 720px; overflow: hidden;
+       font-family: system-ui, sans-serif; }
+
+  /* something to refract */
+  .bg { position: absolute; inset: 0;
+        background:
+          radial-gradient(60% 70% at 22% 28%, #ff6a2b 0%, transparent 60%),
+          radial-gradient(55% 60% at 78% 32%, #2b6bff 0%, transparent 62%),
+          radial-gradient(70% 70% at 50% 88%, #12d18a 0%, transparent 60%),
+          linear-gradient(140deg, #14121a, #241a2e 55%, #101018); }
+  .bg .stripe { position: absolute; left: 0; right: 0; height: 3px;
+        background: rgba(255,255,255,0.30); }
+
+  /* ---- the glass panel ------------------------------------------------ */
+  .glass { position: absolute; border-radius: 44px; overflow: hidden;
+    /* 1. blur what is behind, and lift its colour the way real glass does */
+    backdrop-filter: blur(14px) saturate(1.55) brightness(1.06);
+    -webkit-backdrop-filter: blur(14px) saturate(1.55) brightness(1.06);
+    /* 2. a faint body tint so the panel reads as a surface, not a hole */
+    background: linear-gradient(150deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05) 46%, rgba(255,255,255,0.11));
+    /* 3. the edge: a bright inner hairline, a dark outer one, and a cast shadow */
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,0.62),
+      inset 0 -1.2px 0 rgba(255,255,255,0.20),
+      inset 1.2px 0 0 rgba(255,255,255,0.20),
+      inset -1.2px 0 0 rgba(255,255,255,0.20),
+      0 26px 50px rgba(0,0,0,0.42);
+  }
+  /* 4. refraction. CC Glass displaces the background against a bump map; the
+        CSS-native equivalent is an SVG displacement filter fed by a blurred
+        copy of the panel's own alpha, which bends hardest at the edges. */
+  .glass.refract { filter: url(#lg); }
+
+  /* 5. the travelling glint - CC Light Sweep's equivalent */
+  .sheen { position: absolute; inset: -40%; pointer-events: none;
+    background: conic-gradient(from 0deg,
+      transparent 0deg, rgba(255,255,255,0.00) 60deg,
+      rgba(255,255,255,0.55) 92deg, rgba(255,255,255,0.00) 128deg,
+      transparent 360deg);
+    mix-blend-mode: overlay; }
+
+  #p1 { left: 150px; top: 180px; width: 420px; height: 300px; }
+  #p2 { left: 660px; top: 210px; width: 470px; height: 240px; border-radius: 120px; }
+  .lbl { position: absolute; left: 0; right: 0; bottom: 26px; text-align: center;
+         color: #fff; font-size: 22px; font-weight: 600; letter-spacing: -0.01em;
+         opacity: 0.92; }
+</style>
+</head>
+<body>
+<div id="g" data-composition-id="g" data-fps="30" data-duration="2" data-width="1280" data-height="720">
+  <svg width="0" height="0" style="position:absolute">
+    <filter id="lg" x="-20%" y="-20%" width="140%" height="140%">
+      <!-- blur the shape's own alpha into a bump, then displace by it -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="bump"/>
+      <feDisplacementMap in="SourceGraphic" in2="bump" scale="26"
+                         xChannelSelector="A" yChannelSelector="A"/>
+    </filter>
+  </svg>
+
+  <div class="clip" data-start="0" data-duration="1.99" style="position:absolute;inset:0">
+    <div class="bg">
+      <div class="stripe" style="top:150px"></div>
+      <div class="stripe" style="top:300px"></div>
+      <div class="stripe" style="top:450px"></div>
+      <div class="stripe" style="top:600px"></div>
+    </div>
+    <div class="glass" id="p1"><div class="sheen"></div></div>
+    <div class="glass refract" id="p2"><div class="sheen"></div></div>
+    <div class="lbl">left: plain &nbsp;|&nbsp; right: + SVG displacement refraction</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var tl = gsap.timeline({ paused: true });
+  tl.fromTo('#p1 .sheen', { rotation: 0 }, { rotation: 360, duration: 2, ease: 'none' }, 0);
+  tl.fromTo('#p2 .sheen', { rotation: 0 }, { rotation: 360, duration: 2, ease: 'none' }, 0);
+  window.__timelines = [tl];
+})();
+</script>
+</body>
+</html>
