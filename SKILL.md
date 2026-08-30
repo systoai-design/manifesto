@@ -13,7 +13,9 @@ description: >
   adding motion blur to cards that strobe, and reframing to 9:16 or 1080p. Also
   carries the Apple-style per-character cascade (SF Pro, rise + fade + blur) and
   how to translate an After Effects Range Selector into GSAP, and Apple's
-  liquid-glass surface in CSS. Not
+  liquid-glass surface in CSS, and the product-UI motion vocabulary (defocus
+  entries, push-ins, mid-card scrolls, counter paths, carousels, cross-
+  dissolves). Not
   for websites — that's swipefile. Measures the reference numerically (per-frame
   pixel analysis, fitted easing curves, audio-onset cut detection) rather than
   eyeballing sampled frames, and scores convergence with SSIM.
@@ -472,6 +474,8 @@ separating a bed does not license it.
 | `fit-tiles.mjs` | **optimise** a scattered layer's positions against the reference |
 | `reframe.mjs` | generate an aspect-ratio variant with the stage wrapper done right |
 | `check-framing.mjs` | sweep a render for centring, clipping and the widest content |
+| `card-elements.mjs` | every element on one frame: bands, then column runs within a band |
+| `card-motion.mjs` | what a card DOES across its frames - focus, ink, box, centroid |
 | `font-identify.mjs` | rank candidate faces by glyph IoU - the only reliable way |
 | `vo-transcribe.py` | word-level frame numbers for the reference read - the timing template |
 | `vo-profile.py` | the reference read's median f0, pitch spread and words per minute |
@@ -537,6 +541,78 @@ points each and moved the overall total by **0.03**, because the real losses
 were in graphic cards that were never font-limited. Quote the font ceiling for
 type-heavy cards, and measure the graphic cards separately before promising
 anything about the whole.
+
+## Grading an ORIGINAL film
+
+`grade.mjs` scores a replica against its reference by pixel similarity, as a
+percentage of that reference's re-encode ceiling. An original film has no
+reference, so that number does not exist for it — running it there produces a
+figure that means nothing.
+
+`grade-original.py` grades a film against its own stated standards instead.
+Sixteen pass/fail checks across frame integrity, legibility, composition, type
+hierarchy, continuity, motion law, audio and sync. Wire it into the build so it
+exits non-zero and a bad render cannot ship quietly.
+
+**Four things that cost real iterations to get right, all of which look like
+defects and are not:**
+
+- **Grade contrast at the LARGE-text threshold (3:1), not 4.5:1.** 4.5 is WCAG's
+  body-copy figure. Display type is large text by definition. A brand accent
+  that is a *hue* contrast rather than a luminance one — orange on cream —
+  computes near 3:1 by construction and will fail the wrong standard forever.
+- **Measure legibility only while type is SETTLED.** Type mid-dissolve is
+  deliberately blending into the ground; its contrast is meaningless. Sample
+  after the entrance and before the exit.
+- **Overshoot is a DIRECTION REVERSAL, not movement.** "The area changed" flags
+  every re-triggering treatment: a hammer that stamps its word three times in
+  one beat moves enormously and never once turns around. Segment on the RAW
+  series (a re-trigger is a sharp jump up), smooth *within* each segment, then
+  look for a change of sign.
+- **Never measure motion on a bounding box.** A bbox is a min/max extremum: at
+  360p one row of antialiasing crossing the mask threshold flips the height by a
+  pixel and swings the area 4%, in type that is provably still. Use ink COUNT,
+  an integral over the frame. And smooth it — film grain re-seeded per frame
+  adds ~1.7% of uncorrelated noise, which is enough to manufacture reversals.
+
+## Generating a read that does not drift
+
+`vo-generate-perline.py`. **One generation per line, never one request for the
+whole script.** A single long request with `<break>` tags lets the model wander
+across the read — delivery drifts and some lines land audibly quieter than their
+neighbours. Nothing forces line 30 to match line 3 when they are the same
+generation. A line generated on its own cannot drift relative to any other line.
+
+Then pull each line toward a common RMS, but only ~75% of the way: all the way
+is a monotone, none of the way is the original complaint. Measured effect on one
+36-line read: **level spread 3.77 dB → 0.92 dB.**
+
+Authoring the gaps here rather than discovering them afterwards also means the
+timeline falls out of the generator (`beats-from-read.py`) with no transcription
+step — every line lands exactly where it was placed instead of within a
+tolerance of it, and the whole forced-alignment stage disappears.
+
+## Placing a music bed under a voice
+
+`bed-place-spectral.sh`. Place the bed **spectrally**, then duck gently. Ducking
+harder is what you do when the bed is in the wrong place to begin with.
+
+Measure both first — a Welch PSD of the track against the *voiced frames* of the
+read. A typical result: the music peaks near 100 Hz with 83% of its energy below
+250 Hz and 5% above 1 kHz, while the voice peaks near 215 Hz. The fight is in
+120–250 Hz. Two consequences follow and neither is guessable:
+
+- **Turning a bass-heavy track down reads as "muffled".** A uniform 12 dB cut
+  drops the top end below audibility while the bass stays put; what is left is
+  rumble with no air. Restore the top with a shelf ABOVE the intelligibility
+  band (5 kHz), not below it.
+- **Aim the carve at the measured collision.** A notch at 420 Hz sounds sensible
+  and sits above the fight — in one measured case it *raised* the music's share
+  of the 120–250 Hz band from 22% to 31%.
+
+With the bed carved where the voice actually lives, the compressor has almost
+nothing left to do: **14.8 dB of average gain reduction became 2.0 dB**, and the
+"the music stops every time she speaks" complaint went with it.
 
 ## Stop condition
 
@@ -1089,3 +1165,133 @@ Two habits from the AE build that translate directly and are worth stealing:
   the main shape so size and roundness propagate. In CSS use one custom property
   (`--r` for radius, `--w` for width) read by all three layers, so a single
   change moves the panel, its rim and its shadow together.
+
+---
+
+# The product-UI motion vocabulary
+
+Kinetic type is one genre. Product and UI films - affiliate promos, feature
+tours, pricing explainers - use a different and fairly small set of moves, and
+almost all of them are invisible in a contact sheet. They are found by tracking
+a card across its frames, not by looking at its settled state.
+
+`card-motion.mjs` reports focus, ink, bounding box and centroid across a frame
+range, with `--cmp` to run yours beside the reference. Each column diagnoses a
+specific move:
+
+| what you see | what it is |
+| --- | --- |
+| `sharp` rising through the first frames | the card **enters defocused** and resolves |
+| `w` and `h` growing together | a **push-in** |
+| `cy` drifting while the box holds | the card **scrolls** |
+| `ink` settling below the reference | your type is the wrong **size**, not position |
+| `sharp` settling below the reference | your type is too **light**, or missing elements |
+
+## The moves, and how each is measured
+
+**Defocus entry.** The card arrives heavily blurred and resolves over 10-15
+frames. Mean gradient gives the curve directly - on the piece this came from it
+ran 0.064, 0.155, 0.601, 1.686, 2.164, 2.401 across six samples. Build it as a
+`filter: blur()` tween separate from the position tween, because the blur
+resolves faster than the move completes.
+
+**Push-in and pull-back.** Cards scale from about 0.55 to 1.0 on entry, or the
+reverse on exit. Two ways to catch the amount without guessing: track the ink
+box across the card, or find one element present at both ends and divide its
+widths. On a zoomed page, one small element is the best gauge available - a
+highlighted link 69px wide at one frame and 375px at another is a 5.4x push, and
+that measurement is only valid if it is *the same element* at both frames.
+
+**Mid-card scroll.** Content slides up while the card holds, so a measurement
+taken at one frame does not describe the card. Centroid drift with a stable box
+is the signature.
+
+**Counters are rarely a single ramp.** They overshoot and settle, or run fast
+then ease. Read the value at five or six frames and build the path from those:
+one real sequence was 24, 167, 639, 560, then a hard drop to 358 in seven
+frames. Drive fills, knobs and labels from **one** counter object rather than
+tweening them separately, or they drift apart.
+
+**Carousels.** A row of options where the active one rotates to the middle and
+grows. The order cycles with each state, so the row is not three static slots -
+reordering through CSS `order` at each transition is enough, since the change
+happens on a cut. Check the pairing explicitly: an active icon that does not
+match its label is the tell that the rotation is missing.
+
+**Cross-dissolves.** Between two cards the ground blends rather than cuts.
+Sample one frame corner across the transition and the curve falls out - 236.9,
+166.9, 99.7, 47.0, 19.5. Any card boundary where the corner is neither value is
+a dissolve.
+
+**Draw-on strokes.** Curves reveal by `strokeDasharray` / `strokeDashoffset`.
+Trace the path rather than inventing it: sample the topmost curve-coloured pixel
+per column and fit through those points. Markers sit **on** the path, so place
+them from the same samples.
+
+**Chromatic smear.** Outgoing type tears into colour fringes. Three offset
+copies of the text in pink, green and yellow at `mix-blend-mode: multiply`,
+their offsets animating outward, is close enough and costs nothing.
+
+**Backgrounds are not always flat.** Sample the four corners of every card, not
+one. On the piece this came from, two cards of fifteen carried a lime wash in
+opposite corners and thirteen were pure white; applying it everywhere helped two
+cards and cost seven.
+
+## Audit clip boundaries before tuning anything
+
+A card that will not improve may not be the card. On a graded build, 47 frames
+of one card were rendering *underneath* the next because a clip ran past its
+cut - its heading, grid, labels and curve all sat behind the following card, and
+no amount of adjusting that card would ever have fixed it. Parse every
+`data-start` / `data-duration`, convert to frames, and diff against the measured
+cut list before touching values.
+
+---
+
+# When the score stops agreeing with the picture
+
+Late in a graded build, fidelity and the metric partly decouple, and it is worth
+recognising rather than fighting.
+
+Three separate cards on one build got **measurably more faithful and scored
+lower**:
+
+- a chart rebuilt with the axis, markers and coral labels the reference has:
+  **97.5 -> 96.9**
+- a card given the defocus entry the reference has: **94.8 -> 94.4**
+- a card whose type was corrected from 359px wide to the measured 412: no gain
+
+The reason is mechanical. Absent content costs the score once. Present content
+that is a few pixels or one frame out costs it twice - a miss where it should be
+and a miss where it is. So a sparse card can outscore a complete one, and the
+grade will quietly push you toward leaving elements out.
+
+**What to do about it.** Keep the faithful version, and say plainly that you did
+and why. Then judge those cards on measured agreement instead: ink mass, ink box
+and centroid against the reference, which is what `card-motion.mjs --cmp` prints.
+A card whose ink settles at 70,342 against the reference's 84,579 is 17% light
+whatever the percentage says, and *that* number still moves in the right
+direction when you fix it.
+
+The graded loop remains right for finding which card is worst and for catching
+regressions. It stops being the right target once every card is structurally
+present and the residual is sub-pixel and sub-frame.
+
+---
+
+# Sound
+
+Two different jobs, and only one of them is covered here.
+
+**Replacing a soundtrack** - separating the bed, replacing the read, composing
+an original - is documented in the audio sections above, with scripts.
+
+**Sound design proper** - a transient per cut, a whoosh under a fast move, a
+click on a UI state change - is not. The one principle worth carrying from the
+references studied: **match the sound's character to the motion's.** Smooth
+animation wants soft, low-transient sound; hard cuts want sharp ones. A film
+whose cuts are silent reads unfinished even when the picture is right, and this
+is usually the cheapest remaining improvement once the visuals converge.
+
+If a piece needs designed SFX, the cut list from `segment.mjs` is already the
+edit decision list to place them against - every cut frame, every blank gap.
