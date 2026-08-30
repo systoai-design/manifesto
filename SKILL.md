@@ -484,6 +484,22 @@ separating a bed does not license it.
 | `bed-compose.py` | synthesise an original bed - worked example |
 | `bed-analyse.py` | tempo, pitch classes and energy arc of any bed |
 
+### Measure the font ceiling before promising a number
+
+If the reference's typeface cannot be obtained, find out what that costs
+**before** spending days on layout. Take the cheapest pure-text card - a single
+line on a flat ground, no motion, no colour - and fit it until its geometry
+matches: ink width, ink box, and total ink mass.
+
+On the piece this note comes from, that fit landed within 3 px of width, 1 px
+of height and **0.05% of ink mass**. The card scored **97.51%**, and the glyph
+IoU was **32.4%**. Only a third of the ink overlapped, and perfecting the
+geometry had bought 0.32 points. Everything left was letterform shape.
+
+That single number is the ceiling for every type-heavy card in the piece, and
+it is cheap to obtain. Quote it before agreeing a similarity target: a film
+that is mostly type cannot beat its font ceiling, however good the layout.
+
 ## Stop condition
 
 Stop when a card reaches its own ceiling, or when the numbers stop moving —
