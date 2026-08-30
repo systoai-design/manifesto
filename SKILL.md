@@ -472,6 +472,7 @@ separating a bed does not license it.
 | `fit-tiles.mjs` | **optimise** a scattered layer's positions against the reference |
 | `reframe.mjs` | generate an aspect-ratio variant with the stage wrapper done right |
 | `check-framing.mjs` | sweep a render for centring, clipping and the widest content |
+| `font-identify.mjs` | rank candidate faces by glyph IoU - the only reliable way |
 | `vo-transcribe.py` | word-level frame numbers for the reference read - the timing template |
 | `vo-profile.py` | the reference read's median f0, pitch spread and words per minute |
 | `vo-rank-voices.py` | rank candidate voices by f0 distance from that target |
@@ -483,6 +484,36 @@ separating a bed does not license it.
 | `bed-tempo-fit.py` | least-squares fit a tempo grid to your own cut list |
 | `bed-compose.py` | synthesise an original bed - worked example |
 | `bed-analyse.py` | tempo, pitch classes and energy arc of any bed |
+
+### Identify the typeface by glyph IoU, never by column profile
+
+`font-identify.mjs` renders a known string from the reference in every candidate
+face, crops both to their ink boxes, resamples to a fixed grid, and measures
+intersection over union of the ink. Size and spacing are normalised away, so
+what is left is **letterform shape** - the thing that actually differs between
+faces.
+
+Do not use column-profile correlation for this. It mostly measures stroke weight
+and spacing. On the piece this note comes from it ranked a visibly wrong face
+first, and the face it buried in 21st place was the right one:
+
+| method | winner | the truth |
+| --- | --- | --- |
+| column profile | Outfit (0.68 r) | 16.3% IoU - one of the worst in the set |
+| glyph IoU | **Archivo 58.6%** | runner-up 34.4%, a clear separation |
+
+Calibration: a deliberately wrong face, fitted to within 0.05% of the
+reference's ink mass, scores about **32%**. Read < 50% as wrong, 50-75% as a
+near relative, > 85% as the face or a clone of it.
+
+If the face is variable, fit its axes the same way - prefer the setting whose
+**natural aspect** matches the reference, so widths come out right without
+per-card tracking hacks, over a marginally higher IoU that needs them.
+
+**Fit weight by IoU, not by ink mass.** Lowering the weight can move total ink
+toward the reference while making the match worse, because the excess is
+letterform rather than stroke width. Optimising the wrong metric here actively
+misleads.
 
 ### Measure the font ceiling before promising a number
 
@@ -499,6 +530,13 @@ geometry had bought 0.32 points. Everything left was letterform shape.
 That single number is the ceiling for every type-heavy card in the piece, and
 it is cheap to obtain. Quote it before agreeing a similarity target: a film
 that is mostly type cannot beat its font ceiling, however good the layout.
+
+**But do not mistake it for the film's ceiling.** On the piece this came from,
+properly identifying the face and fitting it lifted the text cards by 0.1-0.4
+points each and moved the overall total by **0.03**, because the real losses
+were in graphic cards that were never font-limited. Quote the font ceiling for
+type-heavy cards, and measure the graphic cards separately before promising
+anything about the whole.
 
 ## Stop condition
 
