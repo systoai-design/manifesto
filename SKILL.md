@@ -1,5 +1,5 @@
 ---
-name: motion-replicate
+name: manifesto
 description: >
   Replicate a motion-graphics video (ad, kinetic typography, logo sting, title
   sequence, UI animation) from a video file or URL into a rendered HyperFrames
@@ -21,7 +21,7 @@ description: >
   eyeballing sampled frames, and scores convergence with SSIM.
 ---
 
-# Motion Replicate — video reference → matching rendered video
+# Manifesto — video reference → matching rendered video
 
 ## The core principle
 
