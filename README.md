@@ -117,22 +117,20 @@ Voice and bed work is a second cluster: `vo-generate.py`, `vo-fit-eq.py`, `vo-mi
 - The follow-on work: new voiceover, original music bed, higher frame rate, motion blur,
   reframe to vertical
 
-Not for websites. That is `swipefile`.
+Not for websites. That is [swipefile](https://github.com/systoai-design/swipefile).
 
 ---
 
 ## Install
 
-Private repo, so clone with an authenticated remote:
-
 ```bash
-gh repo clone systoai-design/manifesto ~/.claude/skills/manifesto
+git clone https://github.com/systoai-design/manifesto.git ~/.claude/skills/manifesto
 ```
 
 On Windows, keep it off `C:` and expose it with a junction:
 
 ```powershell
-gh repo clone systoai-design/manifesto "E:\New Claude\skills\manifesto"
+git clone https://github.com/systoai-design/manifesto.git "E:\New Claude\skills\manifesto"
 New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\skills\manifesto" -Target "E:\New Claude\skills\manifesto"
 ```
 
@@ -147,10 +145,12 @@ docs/         the images above
 
 ## Related Systo skills
 
-- **motion-brief** is the other end of the same problem: when the ask is to be inspired
+- [**motion-brief**](https://github.com/systoai-design/motion-brief) is the other end of the same problem: when the ask is to be inspired
   by a reference rather than to match it
-- **hyperframes-render-discipline** for verifying the renders this produces
-- **swipefile** for websites rather than video
+- [**hyperframes-render-discipline**](https://github.com/systoai-design/hyperframes-render-discipline) for verifying the renders this produces
+- [**motion-graphics-director**](https://github.com/systoai-design/motion-graphics-director) decides how much
+  production pipeline a piece needs, and runs before this one
+- [**swipefile**](https://github.com/systoai-design/swipefile) for websites rather than video
 
 ## House style
 
