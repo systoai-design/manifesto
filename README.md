@@ -10,6 +10,33 @@ frames, eyeball them, and call it close.
 
 ---
 
+## Showcase
+
+Two renders of the same 776-frame skeleton, in `showcase/`.
+
+| | |
+|---|---|
+| [`systo-26s-1920x1080.mp4`](showcase/systo-26s-1920x1080.mp4) | 16:9, 1920x1080 @ 60fps |
+| [`systo-26s-1080x1920.mp4`](showcase/systo-26s-1080x1920.mp4) | 9:16, 1080x1920 @ 60fps |
+
+Neither is a clone. Both are a *new film* hung on a measured reference's skeleton:
+its cut frames, its easing curves and its blank gaps, carrying different copy, a
+different brand, a synthetic read and an original synthesised music bed. The
+vertical is a genuine re-layout at 1.3x rather than a crop, which is the largest
+scale the widest line in the film tolerates.
+
+Everything in both files is original. The reference that supplied the skeleton is
+not redistributed here, and neither is any frame-exact clone of it: a measured
+skeleton is a set of numbers, and numbers are what this repository ships.
+
+**What the replication half scores.** On its convergence target the clone reached
+**99.35% of the achievable ceiling**, grade A, with 22 of 23 cards at 99-100%. The
+ceiling is measured rather than assumed, by re-encoding the reference and scoring
+it against itself, which caps a perfect clone below 100% because both files are
+lossy. The one card that stalled, at 89.5%, is documented with the reason.
+
+---
+
 ## The core position
 
 Most "recreate this video" work fails the same way. Someone watches the reference,
