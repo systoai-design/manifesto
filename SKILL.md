@@ -18,7 +18,9 @@ description: >
   dissolves). Not
   for websites, that's swipefile. Measures the reference numerically (per-frame
   pixel analysis, fitted easing curves, audio-onset cut detection) rather than
-  eyeballing sampled frames, and scores convergence with SSIM.
+  eyeballing sampled frames, and scores convergence with SSIM. Remembers every
+  reference it measures in a compounding library, so a second film on the same
+  skeleton costs a file read instead of a full re-measure.
 ---
 
 # Manifesto, video reference → matching rendered video
@@ -59,6 +61,28 @@ was reverted:
 - Work dirs: `D:\New Claude\motion-replicate\<slug>\` for the project,
   `<project>\.analysis\` for measurement artifacts. Never C:.
 - Scripts live in this skill's `scripts/`. Refer to it as `$S` below.
+- **Consult the library before you decode.** `library/INDEX.md`. A reference
+  measured once should never be measured twice.
+
+## 0.5 Consult the library first
+
+`library/INDEX.md`, before `ffprobe`. If this reference, or a close sibling, has
+already been measured, most of §3 is a file read rather than a decode.
+
+An entry at **`skeleton`** fidelity carries the cut frames, per-segment durations,
+mechanics, blank-gap runs and the music grid, which is exactly the set *Deriving a
+NEW film from a measured reference* consumes. Work from it directly.
+
+Two things an entry never spares you:
+
+- **Media.** The library stores measurements, not frames or audio. Cloning still
+  needs the source file.
+- **Per-card layout numbers.** Those were fitted to the old words in the old
+  typeface and must be re-fitted regardless, as the derive section says.
+
+An entry at `partial` or `signature-only` does not license skipping the measure
+pass. The entry declares which, and the declaration is trustworthy only because it
+is never promoted without a re-run.
 
 ## 1. Ingest
 
@@ -456,6 +480,37 @@ Sweep the whole film before handing anything over, not one frame, see
 *Verifying a build before handing it over*. Say plainly what is and is not
 cleared: a muxed reference soundtrack makes the artefact private/study-only, and
 separating a bed does not license it.
+
+## 9. Record what you learned
+
+Write or update `library/<slug>.md` from `library/TEMPLATE.md`, and append one row
+to `library/INDEX.md`. Every job, clone or derivation, whether or not it converged.
+
+The measurement pipeline is the expensive part of this skill. A reference costs a
+full decode, a segmentation, an easing fit, a glyph-IoU font identification, a blur
+test and an audio analysis. All of that currently evaporates the moment the render
+ships, and the next film on the same skeleton pays for it again.
+
+Record, at minimum:
+
+- **The cut frames**, verbatim from `cards/frames.txt`. This one line is most of
+  the skeleton's value.
+- **Segment durations and the blank-gap runs.** Gaps are load-bearing for pacing
+  and are the structural check when deriving.
+- **The music grid** — BPM, offset, frames-per-beat — and whether the cuts sit on
+  it or deliberately anticipate it.
+- **The mechanic counts**, which are the film's movement vocabulary.
+- **The typeface finding and its measured ceiling**, so the next build does not
+  promise a convergence number the substitution cannot reach.
+- **The grade achieved and the cards that resisted.** Where a clone stalled is
+  more useful to the next person than where it succeeded.
+
+Declare fidelity honestly. Under-claiming costs one decode pass. Over-claiming
+silently ships a film cut on invented frames, and no single frame comparison will
+reveal it.
+
+Append a row to the entry's **Derived works** table for every film built on the
+skeleton. That table is the entry paying for itself.
 
 ## Scripts
 
