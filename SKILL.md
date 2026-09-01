@@ -990,6 +990,32 @@ fine. Frames touching an edge that are not deliberately full-bleed are faults.
 When you fix a class of bug, **check every artefact that could have it**, not
 just the one you were looking at.
 
+## Verify what the file contains, not what you meant it to contain
+
+A build's notes describe intent. The delivered file is a separate object, and
+the two drift the moment you swap something in for a test and do not swap it
+back.
+
+On one film the music bed had been composed from oscillators specifically so
+nothing third-party shipped, and the findings document said so. A supplied
+reference track was then mixed in for a listening test, the audio asset was left
+pointing at that mix, and **both delivered renders carried it** while the
+document kept asserting the original composition. Nothing about the file
+advertised the problem - it played correctly and sounded right.
+
+It was caught by cross-correlating the render's own audio against each candidate
+bed: **0.997 against the supplied track, 0.587 against the composition.** Not a
+judgement call. After re-rendering, both delivered formats read **0.991 against the
+composition** and 0.644 against the reference's own bed.
+
+    python bed-verify.py renders/out.mp4 --against composed.wav --against supplied.mp3
+
+Before handing over or publishing anything, take every claim you have made about
+what the artefact *contains* - its audio, its fonts, its imagery - and check each
+one against the artefact. This matters most for the claims you are most sure of,
+because those are the ones nobody re-reads. A temporary swap made for one test
+does not announce itself a week later.
+
 ## A measurement bug that will cost you an hour
 
 Decoding one frame gives `(H, W, 3)`, so `.mean(2)` averages the colour
