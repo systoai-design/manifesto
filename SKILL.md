@@ -101,7 +101,8 @@ Two passes, purely to learn the *content*: what each card says and the rough
 order. Do not derive timings here.
 
 ```bash
-node "C:\Users\Kyle\.claude\skills\watch-video\scripts\watch.mjs" "<video>" --every 0.5 --max 60
+# a frame-sampling helper if you have one; the ffmpeg sheet below stands alone
+node "<watch-video skill>/scripts/watch.mjs" "<video>" --every 0.5 --max 60
 ffmpeg -v error -y -ss <t0> -t <len> -i "<video>" -vf "fps=10,scale=426:-1,tile=4x3" "sheets/W_%02d.jpg"
 ```
 
