@@ -51,6 +51,25 @@ was reverted:
   original music bed, delivered at 60fps in 16:9, 1080p and 9:16. Its `build.sh`
   is the whole render pipeline including the per-card shutter.
 
+## Local models the audio scripts need
+
+Nothing here downloads weights: they are large, they carry their own licences,
+and fetching them is the operator's call. The scripts resolve them in this order
+and fail with the variable to set if they cannot.
+
+| What | Variable | Default | Used by |
+| --- | --- | --- | --- |
+| Kokoro TTS (`kokoro-v1.0.onnx`, `voices-v1.0.bin`) | `KOKORO_HOME` | `./models/kokoro/` | `vo-generate.py`, `vo-generate-perline.py` |
+| faster-whisper cache | `HF_HOME` | `./models/hf-cache/` | `vo-transcribe.py` |
+
+Keep them off a small system drive. A miss prints the files it wanted and every
+directory it looked in, rather than failing inside a model loader.
+
+**The read is data, not code.** `vo-generate.py` and `vo-generate-perline.py`
+take a JSON script; see `examples/systo-35s-script.json` for the shape. Both
+previously carried one film's lines inline, which meant they only worked for
+that film.
+
 ## The craft library
 
 Measurement gets you a replica. It does not tell you what makes motion good, and

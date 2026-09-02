@@ -2,8 +2,7 @@
 Generate the film's read, one line at a time.
 
 Voice is Kokoro `af_heart` -- the same local model and voice used for the Apple
-motion replication in D:/New Claude/motion-replicate, whose read this film is
-matching.
+motion replications this skill produces, whose read a derived film matches.
 
 Two things here are deliberate and both fix real complaints about the previous
 ElevenLabs pass:
@@ -21,7 +20,7 @@ Because every gap is authored here rather than discovered afterwards, this also
 emits the timeline directly -- no transcription step, and each line lands exactly
 where it was placed rather than within a tolerance of it.
 
-  usage: <venv-python> scripts/generate_vo.py
+  usage: python scripts/vo-generate-perline.py <script.json> [--voice af_heart]
 """
 
 import io
@@ -29,13 +28,38 @@ import json
 import os
 import sys
 
+import argparse
+
 import numpy as np
 import soundfile as sf
+
+
+def _args():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('script', nargs='?', default='script.json',
+                    help='JSON list of {text, pauseAfter, speed}')
+    ap.add_argument('--voice', default='af_heart')
+    return ap.parse_args()
+
+
+def load_script(path):
+    """The read is DATA. A film's own lines do not belong inside the skill."""
+    if not os.path.exists(path):
+        raise SystemExit(
+            'no script at ' + path + '. Pass a JSON list of '
+            '{"text","pauseAfter","speed"} objects. See '
+            'examples/systo-35s-script.json for the shape.')
+    raw = json.load(open(path, encoding='utf-8'))
+    return [(r['text'], float(r.get('pauseAfter', 0.4)), float(r.get('speed', 1.0)))
+            if isinstance(r, dict) else tuple(r) for r in raw]
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _models import kokoro_files
 from kokoro_onnx import Kokoro
 
-MODEL = "D:/kokoro/kokoro-v1.0.onnx"
-VOICES = "D:/kokoro/voices-v1.0.bin"
-VOICE = "af_heart"
+ARGS = _args()
+MODEL, VOICES = kokoro_files()
+VOICE = ARGS.voice
 
 SR_OUT = 48000
 
@@ -61,31 +85,7 @@ LEVEL_PULL = 0.75
 # Gaps are allocated, not uniform. Verb runs get 0.2s so the list reads as
 # closing in; the turn gets a second; speed drops under 1.0 on the weighted
 # lines because this register is certain, and certainty is slow.
-SCRIPT: list[tuple[str, float, float]] = [
-    ("You started a business.", 0.42, 0.95),
-    ("Then it started running you.", 0.52, 0.95),
-    ("Answer it.", 0.20, 1.03),
-    ("Chase it.", 0.34, 1.03),
-    ("Again. Again. And again.", 0.50, 0.93),
-    ("Post it.", 0.20, 1.05),
-    ("Send it.", 0.38, 1.05),
-    ("Again.", 0.55, 0.90),
-    ("Enough.", 0.88, 0.88),
-    ("Software doesn't run a business.", 0.34, 0.95),
-    ("People do.", 0.60, 0.92),
-    ("We don't hand you a tool.", 0.32, 0.98),
-    ("We hand you an operator.", 0.44, 0.92),
-    ("A person.", 0.56, 0.90),
-    ("They answer it.", 0.22, 1.00),
-    ("They chase it.", 0.22, 1.00),
-    ("They book it.", 0.34, 1.00),
-    ("All of it.", 0.46, 0.92),
-    ("In your name.", 0.56, 0.92),
-    ("Nothing ships until a person says yes.", 0.62, 0.94),
-    ("You own the AI.", 0.34, 0.94),
-    ("We operate it.", 0.60, 0.92),
-    ("Systo. Hire an operator.", 0.0, 0.92),
-]
+SCRIPT = load_script(ARGS.script)
 
 # Silence inserted BEFORE a line, for the beats where the animation is the line.
 # There are only two now: at 35s there is no room for a wordless sequence, so

@@ -1,0 +1,117 @@
+[
+ {
+  "text": "You started a business.",
+  "pauseAfter": 0.42,
+  "speed": 0.95
+ },
+ {
+  "text": "Then it started running you.",
+  "pauseAfter": 0.52,
+  "speed": 0.95
+ },
+ {
+  "text": "Answer it.",
+  "pauseAfter": 0.2,
+  "speed": 1.03
+ },
+ {
+  "text": "Chase it.",
+  "pauseAfter": 0.34,
+  "speed": 1.03
+ },
+ {
+  "text": "Again. Again. And again.",
+  "pauseAfter": 0.5,
+  "speed": 0.93
+ },
+ {
+  "text": "Post it.",
+  "pauseAfter": 0.2,
+  "speed": 1.05
+ },
+ {
+  "text": "Send it.",
+  "pauseAfter": 0.38,
+  "speed": 1.05
+ },
+ {
+  "text": "Again.",
+  "pauseAfter": 0.55,
+  "speed": 0.9
+ },
+ {
+  "text": "Enough.",
+  "pauseAfter": 0.88,
+  "speed": 0.88
+ },
+ {
+  "text": "Software doesn't run a business.",
+  "pauseAfter": 0.34,
+  "speed": 0.95
+ },
+ {
+  "text": "People do.",
+  "pauseAfter": 0.6,
+  "speed": 0.92
+ },
+ {
+  "text": "We don't hand you a tool.",
+  "pauseAfter": 0.32,
+  "speed": 0.98
+ },
+ {
+  "text": "We hand you an operator.",
+  "pauseAfter": 0.44,
+  "speed": 0.92
+ },
+ {
+  "text": "A person.",
+  "pauseAfter": 0.56,
+  "speed": 0.9
+ },
+ {
+  "text": "They answer it.",
+  "pauseAfter": 0.22,
+  "speed": 1.0
+ },
+ {
+  "text": "They chase it.",
+  "pauseAfter": 0.22,
+  "speed": 1.0
+ },
+ {
+  "text": "They book it.",
+  "pauseAfter": 0.34,
+  "speed": 1.0
+ },
+ {
+  "text": "All of it.",
+  "pauseAfter": 0.46,
+  "speed": 0.92
+ },
+ {
+  "text": "In your name.",
+  "pauseAfter": 0.56,
+  "speed": 0.92
+ },
+ {
+  "text": "Nothing ships until a person says yes.",
+  "pauseAfter": 0.62,
+  "speed": 0.94
+ },
+ {
+  "text": "You own the AI.",
+  "pauseAfter": 0.34,
+  "speed": 0.94
+ },
+ {
+  "text": "We operate it.",
+  "pauseAfter": 0.6,
+  "speed": 0.92
+ },
+ {
+  "text": "Systo. Hire an operator.",
+  "pauseAfter": 0.0,
+  "speed": 0.92
+ }
+]
