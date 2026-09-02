@@ -45,11 +45,49 @@ colour that was off-white where the reference is pure white. Two worked projects
 trail - every correction, its evidence, and every change that scored worse and
 was reverted:
 
-- `D:\New Claude\motion-replicate\abe-ad` - the replication itself
-- `D:\New Claude\motion-replicate\systo-26s` - a **different film built on that
+- `<builds>/abe-ad` - the replication itself
+- `<builds>/systo-26s` - a **different film built on that
   measured skeleton**: same 776 frames and cut list, new copy, brand, voice and
   original music bed, delivered at 60fps in 16:9, 1080p and 9:16. Its `build.sh`
   is the whole render pipeline including the per-card shutter.
+
+## The craft library
+
+Measurement gets you a replica. It does not tell you what makes motion good, and
+from v2 this skill carries that too, in `references/`. Read the one you need;
+none of it is required to run a replication.
+
+| Read | For |
+| --- | --- |
+| `references/canon.md` | **Start here.** The consolidated rules, each in measurable form: physics of motion, choreography, type, character, camera and transitions, sound, the rubric, and a twelve-item index of the fastest ways to look amateur with the detector for each. |
+| `references/twelve-principles.md` | The twelve principles as they apply to graphics rather than character film, each with a GSAP recipe and the signature it leaves on rendered frames. |
+| `references/character-motion.md` | Rigging and animating a character in HTML/SVG + GSAP: hierarchies and origins, the walk cycle with Williams' tempo ladder converted to 30 fps, blinks, weight shifts, smears, moving holds, lip-sync. |
+| `references/kinetic-type.md` | Reading speed and hold time, entrance vocabulary and its emotional register, type as mask and object, and the amateur tells with the fix for each. |
+| `references/motion-rules.md` | The studio rulebook: offset, overlap, the graph editor, arcs, camera, match cuts, the stagger cap, hold-and-breath ratios, rhythm, hierarchy. Appendix B is a 24-row threshold table with a source per number. |
+| `references/sound-design.md` | Sound-to-motion mapping, sync tolerances, loudness targets, and a numpy synthesis function per SFX class so a film ships with no third-party samples. |
+| `references/grading-rubric.md` | The 24 criteria in full: what each measures, in which channel, with its S and C bands and the basis for every threshold. |
+| `references/playlist-lessons.md` | What ~200 finished professional pieces actually do, from fourteen episodes of a working motion designer judging them. Ranked techniques, ten style families, and **15 named recipes** with a measurable signature each. |
+| `references/corrections.md` | Every claim in the above that was downgraded or removed under adversarial review, and why. Read it before quoting a number as canonical. |
+
+**The single most useful finding in there**, because it contradicts what a
+grader naturally rewards: across fourteen episodes judging finished work,
+easing is named four times and never on a long-form winner, while palette lock
+is the most-praised property, around thirty-five pieces. Correct easing is a
+threshold you cross once and then stop being able to see. Keep the ease checks
+as gates and stop treating them as the score.
+
+**Four places where professional practice and a naive grader disagree**, all
+established from the playlist and all now handled by declaration in `grade.json`
+rather than by loosening a threshold:
+
+- **Stepped cadence.** Animating on twos or fours makes duplicate frames on
+  purpose and is praised for it. Declare the cadence; a dead-frame check that
+  fails it is measuring the wrong thing.
+- **Overshoot on a short loop** is a register, not a defect.
+- **The loop register** has no row in the duration tables. A two-second loop is
+  not a held card and must not be graded as one.
+- **Deliberate shared simultaneity** across a group is a technique. A declared
+  shared trigger is not a Rule-1 violation.
 
 ## 0. Ground rules
 
@@ -58,7 +96,7 @@ was reverted:
   glyph → hand-drawn SVG. Soundtrack → mux the reference's own while building,
   and say plainly that this makes the result private/study-only. If it has to
   clear, replace the read and compose a bed, see the audio sections at the end.
-- Work dirs: `D:\New Claude\motion-replicate\<slug>\` for the project,
+- Work dirs: `<builds>/<slug>\` for the project,
   `<project>\.analysis\` for measurement artifacts. Never C:.
 - Scripts live in this skill's `scripts/`. Refer to it as `$S` below.
 - **Consult the library before you decode.** `library/INDEX.md`. A reference
@@ -604,6 +642,53 @@ anything about the whole.
 percentage of that reference's re-encode ceiling. An original film has no
 reference, so that number does not exist for it, running it there produces a
 figure that means nothing.
+
+**Use `grade-mg.py`.** It grades any motion graphic against the 24 criteria in
+`references/grading-rubric.md`, in S / A / B / C bands with a weighted total and
+four hard gates, from two channels: the composition probed frame by frame
+through its paused timeline (`probe-source.mjs`), and the rendered file decoded
+at full frame rate.
+
+```bash
+node scripts/probe-source.mjs <composition-dir> --fps 30 --out .analysis/probe
+python scripts/grade-mg.py <render.mp4> --composition <dir> --manifest grade.json --target A
+```
+
+It exits non-zero below `--target`, so a bad render cannot ship quietly. The
+criteria live in four modules (`crit_motion`, `crit_composition`,
+`crit_legibility`, `crit_structure`) and every threshold is in one named
+constants block per module, because they get re-tuned.
+
+**Two things it does that are not obvious and are the reason it works.**
+
+*It refuses to score a film it cannot measure.* An adversarial probe - a 3.5 s
+static title card with five masked word rises - scored **A 93.3, above every
+finished film**, and every attempt to fix that inside a criterion made it worse.
+The reason is arithmetic: the weighted total averages over *applicable*
+criteria, so sending a row to N/A removes an above-average row and RAISES the
+number. Measured: sending C17 to N/A on a one-cut film took the probe from 90.4
+to 91.4. The floor therefore has to be on coverage, and the canon already says
+where - it gives weight 2 to exactly four criteria (C1 ease discipline, C3
+simultaneity, C17 transition design, C19 reveal craft), which is the canon
+stating what a motion graphic is judged on. A piece where any of those four
+cannot be measured is reported **UNRATED**, with the unmeasurable rows named.
+That is the only instrument here that can tell a faultless film from a film
+with nothing in it.
+
+*It prints the declaration budget.* Every hard criterion has an escape hatch and
+the author writes the manifest, so the report states how many declarations were
+made, how many were consumed, and which criteria changed band because of one -
+measured by removing each key and re-running. A pass that leans on many
+declarations is a weak pass and the report says so.
+
+**Calibration, so you know what the numbers mean.** Against five samples: a
+deliberately amateur control C 51.2, a replica of an aired broadcast ad B 81.6,
+a finished delivered film B 85.0 with no criterion at C, and a trivial two-tween
+test file UNRATED. Before calibration the same code put the trivial file top of
+the list at 82.5 and the finished film eighth of eight criteria-groups at 55.6.
+If professional work is not ranking above the control on your material, the
+grader is miscalibrated for it and the fix is in the measurement, never in the
+threshold.
 
 `grade-original.py` grades a film against its own stated standards instead.
 Sixteen pass/fail checks across frame integrity, legibility, composition, type

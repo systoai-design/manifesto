@@ -1,7 +1,4 @@
-# Nothing generated lives here, the scripts write into the caller's project.
-# These patterns only guard against stray local test output.
-*.bin
-*.raw
+__pycache__/
+*.pyc
+*.bak-*
 .analysis/
-.grade/
-node_modules/

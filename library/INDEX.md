@@ -30,6 +30,7 @@ still lifted from it. Measurements, not media.
 | Call it | Reference | Measured | Native | Fidelity | Derived | Notable |
 |---|---|---|---|---|---|---|
 | **Apple Business Essentials** | [apple-business-essentials](apple-business-essentials.md) | 2026-08-29 | 1280x720 @30fps, 776f, 25.867s | **skeleton** | 2 | Bimodal pacing — a three-cut burst inside 18 frames against long held cards; 149.9 BPM grid that the cuts deliberately anticipate rather than sit on; 10 blank-gap runs are load-bearing; clone graded 99.35% of ceiling, grade A, with 22 of 23 cards at 99-100% |
+| **Roamly** | [roamly-travel-promo](roamly-travel-promo.md) | 2026-09-02 | 1280x720 @30fps, 1124f, 37.467s | **skeleton** | 0 | The map beat is a CAMERA, not a perspective: grid pitch recovered by autocorrelating the centre scanline gives scale 2.57 / 2.06 / 1.00 / 1.59 at f300/320/360/400, both legs linear, and a power3.out pull-back is the first thing a rebuild gets wrong. Only 0.9% of pixels are chromatic at all. Typeface is a substitution with a measured 75.7% ceiling, and fitting the runner-up's width axis to match aspect exactly made IoU WORSE. Study only: third-party commercial work, photography not reproducible |
 
 ---
 
